@@ -2,6 +2,70 @@
 
 一个利用人脸识别技术实现图书借阅管理的系统。
 
+## 前端环境
+
+- **框架**: Vue 3 + JavaScript
+- **构建工具**: Vite
+- **状态管理**: Pinia
+- **路由**: Vue Router 4
+- **UI 框架**: Element Plus
+- **网络请求**: Axios
+
+## 前端项目结构
+
+```
+frontend/
+├── public/             # 静态资源
+├── src/
+│   ├── assets/         # 资源文件
+│   ├── components/     # 组件
+│   ├── router/         # 路由配置
+│   ├── views/          # 视图页面
+│   │   ├── HomeView.vue       # 首页
+│   │   ├── LoginView.vue      # 登录页
+│   │   ├── RegisterView.vue   # 注册页
+│   │   ├── BooksView.vue      # 图书列表
+│   │   ├── BorrowView.vue     # 借阅记录
+│   │   └── ProfileView.vue    # 个人中心
+│   ├── App.vue         # 应用入口
+│   ├── main.js         # 主文件
+│   └── style.css       # 全局样式
+├── .gitignore
+├── package.json        # 项目配置
+└── vite.config.js      # Vite 配置
+```
+
+## 前端快速开始
+
+### 1. 安装依赖
+
+```bash
+cd frontend
+npm install
+```
+
+### 2. 启动开发服务器
+
+```bash
+cd frontend
+npm run dev
+```
+
+服务启动后访问 http://localhost:5173/
+
+### 3. 构建生产版本
+
+```bash
+cd frontend
+npm run build
+```
+
+构建后的文件会生成在 `dist` 目录中。
+
+---
+
+
+
 ## 技术栈
 
 - **后端**: FastAPI + Python 3.11
