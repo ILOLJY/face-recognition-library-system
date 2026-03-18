@@ -9,6 +9,8 @@
 - **缓存**: Redis
 - **服务器**: Uvicorn
 - **数据库迁移**: Alembic
+- **密码加密**: bcrypt
+- **邮箱验证**: email-validator
 
 ## 项目结构
 
@@ -19,6 +21,10 @@
 │   │   ├── env.py                 # 迁移环境配置
 │   │   └── script.py.mako         # 迁移脚本模板
 │   ├── app/
+│   │   ├── api/                   # API 接口模块
+│   │   │   ├── __init__.py
+│   │   │   ├── router.py          # API 路由管理
+│   │   │   └── auth.py            # 认证接口（注册、登录）
 │   │   ├── cache/                 # 缓存模块
 │   │   │   ├── __init__.py
 │   │   │   └── redis.py           # Redis 连接管理
@@ -44,11 +50,58 @@
 ## 核心功能
 
 - **用户管理**：注册、登录、权限控制（管理员/普通用户）
+- **邮箱验证**：注册时发送验证码，5分钟有效期
 - **人脸识别**：身份核验、人脸特征存储与匹配
 - **图书管理**：图书信息维护、分类管理、库存管理
 - **借阅管理**：借阅登记、归还核验、续借功能
 - **逾期提醒**：自动检测逾期记录并发送提醒
 - **统计分析**：借阅数据统计、热门图书分析
+
+## API 接口
+
+### 认证接口
+
+#### 1. 发送验证码
+- **接口**: `POST /api/auth/send-code`
+- **描述**: 向指定邮箱发送6位数字验证码
+- **请求参数**:
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "message": "验证码已发送到您的邮箱"
+  }
+  ```
+
+#### 2. 用户注册
+- **接口**: `POST /api/auth/register`
+- **描述**: 完成用户注册（需要邮箱验证码）
+- **请求参数**:
+  ```json
+  {
+    "username": "testuser",
+    "password": "123456",
+    "email": "user@example.com",
+    "code": "123456",
+    "avatar": null,
+    "role": "USER"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "username": "testuser",
+    "email": "user@example.com",
+    "avatar": null,
+    "role": "USER",
+    "is_active": true
+  }
+  ```
 
 ## 数据模型
 
@@ -89,7 +142,22 @@ pip install -r requirements.txt
 DATABASE_URL = "postgresql+asyncpg://postgres:151004@localhost:5432/library_db"
 ```
 
-### 3. 数据库迁移
+### 3. 配置邮箱
+
+在 `app/api/auth.py` 的 `send_email` 函数中配置邮箱服务器信息：
+
+```python
+smtp_server = "smtp.163.com"
+smtp_port = 465
+sender_email = "your_email@163.com"
+sender_password = "your_authorization_code"
+```
+
+注意：
+- 163邮箱需要开启 SMTP 服务并获取授权码
+- 465端口需要使用 SSL 连接
+
+### 4. 数据库迁移
 
 ```bash
 # 创建初始迁移
@@ -105,7 +173,7 @@ cd backend
 alembic current
 ```
 
-### 4. 启动服务
+### 5. 启动服务
 
 ```bash
 cd backend
@@ -114,7 +182,7 @@ uvicorn app.main:app --reload
 
 服务启动后访问 http://127.0.0.1:8000
 
-### 5. API 文档
+### 6. API 文档
 
 - Swagger UI: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
@@ -122,6 +190,7 @@ uvicorn app.main:app --reload
 ## 系统特性
 
 - **双角色设计**：管理员与读者分离，权限明确
+- **邮箱验证**：注册时验证码验证，5分钟有效期
 - **人脸识别**：集成人脸识别 SDK 实现身份核验
 - **高效流程**：借阅登记、归还核验、逾期提醒全流程自动化
 - **数据安全**：密码加密存储，敏感数据保护
@@ -135,6 +204,7 @@ uvicorn app.main:app --reload
 - 数据库连接配置在 `app/db/session.py` 中
 - 数据库迁移配置在 `alembic/` 目录下
 - Redis 缓存配置在 `app/cache/redis.py` 中（默认端口 6379）
+- API 接口定义在 `app/api/` 目录下
 - API 路由在 `app/main.py` 中定义
 - 所有模型字段均带有详细的中文注释
 
@@ -198,6 +268,9 @@ await redis_client.set("token:123", "abc123", expire=3600)
 - ✅ 数据库模型设计完成
 - ✅ 数据库迁移配置完成
 - ✅ Redis 缓存模块完成
+- ✅ 用户注册接口完成（两步注册流程）
+- ✅ 邮箱验证码功能完成
 - ✅ 基本项目结构搭建
-- 🔄 核心功能开发中
+- 🔄 登录接口开发中
 - 🔄 人脸识别集成中
+- 🔄 其他核心功能开发中
