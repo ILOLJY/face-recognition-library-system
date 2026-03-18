@@ -70,7 +70,7 @@ async def send_email(to_email: str, code: str):
     smtp_server = "smtp.163.com"
     smtp_port = 465
     sender_email = "lcz1421934734@163.com"
-    sender_password = "SDUp9WNTFPWPfhih"
+    sender_password = "WPvd5cQzrb7WZ36t"
     
     # 创建邮件
     message = MIMEMultipart()
@@ -103,12 +103,12 @@ async def send_email(to_email: str, code: str):
     await asyncio.to_thread(send)
 
 
-@router.post("/send-code", status_code=status.HTTP_200_OK)
+@router.post("/send-code/register", status_code=status.HTTP_200_OK)
 async def send_verification_code(
     request: SendCodeRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """发送邮箱验证码"""
+    """发送注册邮箱验证码"""
     # 检查邮箱是否已被注册
     existing_email = await db.execute(
         select(User).where(User.email == request.email)

@@ -87,7 +87,7 @@ const sendCode = async () => {
   
   try {
     // 发送验证码
-    // await axios.post('/api/auth/send-code', { email: registerForm.email })
+    // await axios.post('/api/auth/send-code/register', { email: registerForm.email })
     
     // 模拟发送成功
     countdown.value = 60
