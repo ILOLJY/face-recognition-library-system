@@ -151,7 +151,7 @@ npm run build
     "password": "123456",
     "email": "user@example.com",
     "code": "123456",
-    "avatar": null,
+    "avatar": "",
     "role": "USER"
   }
   ```
@@ -161,7 +161,52 @@ npm run build
     "id": 1,
     "username": "testuser",
     "email": "user@example.com",
-    "avatar": null,
+    "avatar": "",
+    "role": "USER",
+    "is_active": true
+  }
+  ```
+
+#### 3. 用户登录
+- **接口**: `POST /api/auth/login`
+- **描述**: 用户登录（使用邮箱和密码）
+- **请求参数**:
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "123456"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "Bearer",
+    "user": {
+      "id": 1,
+      "username": "testuser",
+      "email": "user@example.com",
+      "avatar": "",
+      "role": "USER",
+      "is_active": true
+    }
+  }
+  ```
+
+#### 4. 获取当前用户信息
+- **接口**: `GET /api/auth/me`
+- **描述**: 获取当前登录用户的信息（需要在请求头中携带 Authorization: Bearer <token>）
+- **请求头**:
+  ```
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "username": "testuser",
+    "email": "user@example.com",
+    "avatar": "",
     "role": "USER",
     "is_active": true
   }

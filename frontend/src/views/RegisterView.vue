@@ -87,9 +87,9 @@ const sendCode = async () => {
   
   try {
     // 发送验证码
-    // await axios.post('/api/auth/send-code/register', { email: registerForm.email })
+    await axios.post('http://localhost:8000/api/auth/send-code/register', { email: registerForm.email })
     
-    // 模拟发送成功
+    // 倒计时
     countdown.value = 60
     const timer = setInterval(() => {
       countdown.value--
@@ -101,6 +101,7 @@ const sendCode = async () => {
     alert('验证码已发送到您的邮箱')
   } catch (error) {
     console.error('发送验证码失败:', error)
+    alert('发送验证码失败：' + (error.response?.data?.detail || '请检查网络连接'))
   }
 }
 
@@ -111,16 +112,23 @@ const register = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 这里需要实现注册逻辑
-        // const response = await axios.post('/api/auth/register', registerForm)
-        // 模拟注册成功
-        setTimeout(() => {
-          loading.value = false
-          router.push('/login')
-        }, 1000)
+        // 调用后端注册接口
+        const response = await axios.post('http://localhost:8000/api/auth/register', {
+          username: registerForm.username,
+          password: registerForm.password,
+          email: registerForm.email,
+          code: registerForm.code,
+          avatar: '',
+          role: 'USER'
+        })
+        
+        loading.value = false
+        alert('注册成功！请登录')
+        router.push('/login')
       } catch (error) {
         loading.value = false
         console.error('注册失败:', error)
+        alert('注册失败：' + (error.response?.data?.detail || '请检查注册信息'))
       }
     }
   })

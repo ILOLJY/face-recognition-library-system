@@ -1,50 +1,17 @@
-"""认证相关 API"""
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.db.session import get_db
-from app.models.users import User, UserRole
-from app.models.face_data import FaceData
-from app.cache.redis import get_redis
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
-import bcrypt
+"""认证服务模块"""
 import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import asyncio
-
-# 创建认证路由
-router = APIRouter()
-
-
-class SendCodeRequest(BaseModel):
-    """发送验证码请求模型"""
-    email: EmailStr = Field(..., description="邮箱地址")
-
-
-class UserCreate(BaseModel):
-    """用户注册请求模型"""
-    username: str = Field(..., min_length=3, max_length=50, description="用户名")
-    password: str = Field(..., min_length=6, description="密码")
-    email: EmailStr = Field(..., description="邮箱地址")
-    code: str = Field(..., min_length=6, max_length=6, description="邮箱验证码")
-    avatar: Optional[str] = Field(None, description="头像图片路径")
-    role: UserRole = Field(UserRole.USER, description="用户角色")
-
-
-class UserResponse(BaseModel):
-    """用户响应模型"""
-    id: int
-    username: str
-    email: str
-    avatar: Optional[str]
-    role: UserRole
-    is_active: bool
-    
-    class Config:
-        from_attributes = True
+import os
+import bcrypt
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.users import User, UserRole
+from app.models.face_data import FaceData
+from app.cache.redis import get_redis
+from app.api.auth.jwt import create_access_token
 
 
 def generate_verification_code(length: int = 6) -> str:
@@ -70,7 +37,15 @@ async def send_email(to_email: str, code: str):
     smtp_server = "smtp.163.com"
     smtp_port = 465
     sender_email = "lcz1421934734@163.com"
-    sender_password = "WPvd5cQzrb7WZ36t"
+    sender_password = os.getenv("EMAIL_PASSWORD")
+    
+    # 开发环境下跳过邮件发送
+    if not sender_password:
+        if os.getenv("ENVIRONMENT") != "production":
+            print(f"WARNING: EMAIL_PASSWORD not set. Skipping email sending for development. Code: {code}")
+            return
+        else:
+            raise ValueError("EMAIL_PASSWORD must be set in production environment")
     
     # 创建邮件
     message = MIMEMultipart()
@@ -103,81 +78,72 @@ async def send_email(to_email: str, code: str):
     await asyncio.to_thread(send)
 
 
-@router.post("/send-code/register", status_code=status.HTTP_200_OK)
-async def send_verification_code(
-    request: SendCodeRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """发送注册邮箱验证码"""
+async def send_verification_code_service(email: str, db: AsyncSession):
+    """发送验证码服务
+    
+    Args:
+        email: 邮箱地址
+        db: 数据库会话
+    
+    Raises:
+        ValueError: 邮箱已被注册
+    """
     # 检查邮箱是否已被注册
     existing_email = await db.execute(
-        select(User).where(User.email == request.email)
+        select(User).where(User.email == email)
     )
     if existing_email.scalar():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该邮箱已被注册"
-        )
+        raise ValueError("该邮箱已被注册")
     
     # 生成验证码
     code = generate_verification_code()
     
     # 将验证码存储到 Redis，5分钟过期
     redis_client = await get_redis()
-    cache_key = f"verification_code:{request.email}"
+    cache_key = f"verification_code:{email}"
     await redis_client.set(cache_key, code, expire=300)
     
     # 发送验证码邮件
-    await send_email(request.email, code)
+    await send_email(email, code)
+
+
+async def register_service(user_data, db: AsyncSession):
+    """注册服务
     
-    # 开发环境直接返回验证码，生产环境请注释掉下面这行
-    return {
-        "message": "验证码已发送到您的邮箱"
-    }
-
-
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    user_data: UserCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    """用户注册接口"""
+    Args:
+        user_data: 用户注册数据
+        db: 数据库会话
+    
+    Returns:
+        User: 新创建的用户
+    
+    Raises:
+        ValueError: 验证码错误或已过期，用户名或邮箱已存在
+    """
     # 验证邮箱验证码
     redis_client = await get_redis()
     cache_key = f"verification_code:{user_data.email}"
     cached_code = await redis_client.get(cache_key)
     
     if not cached_code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证码已过期或不存在"
-        )
+        raise ValueError("验证码已过期或不存在")
     
-    if cached_code != user_data.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证码错误"
-        )
+    if cached_code.decode() != user_data.code:
+        raise ValueError("验证码错误")
     
     # 检查用户名是否已存在
     existing_user = await db.execute(
         select(User).where(User.username == user_data.username)
     )
     if existing_user.scalar():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="用户名已存在"
-        )
+        raise ValueError("用户名已存在")
     
     # 检查邮箱是否已存在
     existing_email = await db.execute(
         select(User).where(User.email == user_data.email)
     )
     if existing_email.scalar():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="邮箱已被注册"
-        )
+        raise ValueError("邮箱已被注册")
     
     # 密码加密
     hashed_password = bcrypt.hashpw(
@@ -213,3 +179,46 @@ async def register(
     await db.commit()
     
     return new_user
+
+
+async def login_service(email: str, password: str, db: AsyncSession):
+    """登录服务
+    
+    Args:
+        email: 邮箱地址
+        password: 密码
+        db: 数据库会话
+    
+    Returns:
+        tuple: (用户, token)
+    
+    Raises:
+        ValueError: 邮箱或密码错误，账号已被禁用
+    """
+    # 查找用户
+    result = await db.execute(
+        select(User).where(User.email == email)
+    )
+    user = result.scalar()
+    
+    # 验证用户是否存在
+    if not user:
+        raise ValueError("邮箱或密码错误")
+    
+    # 验证用户是否激活
+    if not user.is_active:
+        raise ValueError("账号已被禁用")
+    
+    # 验证密码
+    if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+        raise ValueError("邮箱或密码错误")
+    
+    # 创建访问令牌
+    from datetime import timedelta
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": str(user.id), "email": user.email, "role": user.role.value},
+        expires_delta=access_token_expires
+    )
+    
+    return user, access_token

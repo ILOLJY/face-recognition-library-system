@@ -1,8 +1,17 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import logging
 from app.db.session import engine
 from app.db.base import Base
 from app.api.router import api_router
 from app.cache.redis import redis_client
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="图书借阅系统 API",
@@ -10,7 +19,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 包含 API 路由
+# CORS 配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router, prefix="/api")
 
 @app.on_event("startup")

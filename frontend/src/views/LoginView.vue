@@ -5,8 +5,8 @@
         <div class="login-form">
           <h2>用户登录</h2>
           <el-form :model="loginForm" :rules="rules" ref="loginFormRef" label-width="80px">
-            <el-form-item label="用户名" prop="username">
-              <el-input v-model="loginForm.username" placeholder="请输入用户名"></el-input>
+            <el-form-item label="邮箱" prop="username">
+              <el-input v-model="loginForm.username" placeholder="请输入邮箱"></el-input>
             </el-form-item>
             <el-form-item label="密码" prop="password">
               <el-input v-model="loginForm.password" type="password" placeholder="请输入密码"></el-input>
@@ -57,16 +57,22 @@ const login = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 这里需要实现登录逻辑
-        // const response = await axios.post('/api/auth/login', loginForm)
-        // 模拟登录成功
-        setTimeout(() => {
-          loading.value = false
-          router.push('/')
-        }, 1000)
+        // 调用后端登录接口
+        const response = await axios.post('http://localhost:8000/api/auth/login', {
+          email: loginForm.username, // 前端用户名输入框实际输入的是邮箱
+          password: loginForm.password
+        })
+        
+        // 存储token和用户信息
+        localStorage.setItem('access_token', response.data.access_token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        
+        loading.value = false
+        router.push('/home')
       } catch (error) {
         loading.value = false
         console.error('登录失败:', error)
+        alert('登录失败：' + (error.response?.data?.detail || '请检查邮箱和密码'))
       }
     }
   })
