@@ -7,6 +7,8 @@ from app.api.auth.dependencies import get_current_user, get_current_user_id
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from app.models.users import User, UserRole
+import bcrypt
+from app.api.auth.jwt import create_access_token
 
 # 创建认证路由
 router = APIRouter()
@@ -161,3 +163,69 @@ async def logout(
         # secure=False  # 本地开发
     )
     return {"msg": "退出成功"}
+
+
+@router.post("/admin/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
+async def admin_login(
+    user_data: LoginRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db)
+):
+    """管理员登录接口"""
+    # 从数据库获取用户
+    from sqlalchemy import select
+    result = await db.execute(select(User).where(User.email == user_data.email))
+    user = result.scalar()
+    
+    # 验证用户是否存在、密码是否正确、是否为管理员
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="邮箱或密码错误"
+        )
+    
+    # 添加调试日志
+    print(f"用户邮箱: {user.email}")
+    print(f"用户角色: {user.role}")
+    print(f"用户角色类型: {type(user.role)}")
+    print(f"UserRole.ADMIN: {UserRole.ADMIN}")
+    print(f"角色比较结果: {user.role == UserRole.ADMIN}")
+    
+    if not bcrypt.checkpw(user_data.password.encode('utf-8'), user.password.encode('utf-8')):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="邮箱或密码错误"
+        )
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无管理员权限"
+        )
+    
+    # 生成 JWT token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    # 设置 HttpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="Lax",
+        # secure=False  # 本地开发
+    )
+    
+    user_response = UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        avatar=user.avatar,
+        role=user.role,
+        is_active=user.is_active
+    )
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=user_response
+    )

@@ -231,6 +231,91 @@ npm run build
   }
   ```
 
+#### 6. 用户登出
+- **接口**: `POST /api/auth/logout`
+- **描述**: 用户登出，删除 HttpOnly cookie 中的 token
+- **请求参数**: 无
+- **响应**:
+  ```json
+  {
+    "msg": "退出成功"
+  }
+  ```
+
+### 用户接口
+
+#### 1. 获取用户个人信息
+- **接口**: `GET /api/users/profile`
+- **描述**: 获取当前登录用户的详细信息
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "username": "testuser",
+    "email": "user@example.com",
+    "avatar": "/static/avatars/1_1234567890.jpg",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2026-03-18T00:00:00"
+  }
+  ```
+
+#### 2. 修改用户名
+- **接口**: `PUT /api/users/profile/username`
+- **描述**: 修改当前用户的用户名
+- **请求参数**:
+  ```json
+  {
+    "username": "newusername"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "username": "newusername",
+    "email": "user@example.com",
+    "avatar": "/static/avatars/1_1234567890.jpg",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2026-03-18T00:00:00"
+  }
+  ```
+
+#### 3. 修改密码
+- **接口**: `PUT /api/users/profile/password`
+- **描述**: 修改当前用户的密码
+- **请求参数**:
+  ```json
+  {
+    "old_password": "oldpassword",
+    "new_password": "newpassword"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "msg": "密码修改成功"
+  }
+  ```
+
+#### 4. 上传头像
+- **接口**: `POST /api/users/profile/avatar`
+- **描述**: 上传用户头像
+- **请求参数**: 表单数据，字段名为 `file`，类型为文件
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "username": "testuser",
+    "email": "user@example.com",
+    "avatar": "/static/avatars/1_1234567890.jpg",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2026-03-18T00:00:00"
+  }
+  ```
+
 ## 数据模型
 
 ### 1. 用户模型 (users.py)
@@ -333,9 +418,11 @@ uvicorn app.main:app --reload
 - **系统稳定**：支持并发，响应延迟低
 - **可扩展性**：模块化设计，易于功能扩展
 - **缓存机制**：使用 Redis 缓存提升性能
-- **安全认证**：使用 HttpOnly cookie 存储 token，防止 XSS 攻击
+- **安全认证**：使用 HttpOnly cookie 存储 JWT token，防止 XSS 攻击
 - **路由守卫**：前端路由守卫，未登录用户自动跳转到登录页面
-- **注销功能**：支持用户注销登录，清除认证状态
+- **注销功能**：支持用户注销登录，后端删除 HttpOnly cookie
+- **接口封装**：前端统一封装 API 接口，便于维护
+- **完整认证流程**：登录 → 存储 token → 请求验证 → 注销
 
 ## 开发说明
 

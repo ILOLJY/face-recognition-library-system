@@ -2,7 +2,13 @@
   <div class="borrow">
     <el-container>
       <el-main>
-        <h2>借阅记录</h2>
+        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+          <el-button type="default" @click="router.push('/home')">
+            <el-icon><ArrowLeft /></el-icon>
+            返回主页
+          </el-button>
+          <h2>借阅记录</h2>
+        </div>
         <el-table :data="borrowRecords" style="width: 100%">
           <el-table-column prop="id" label="记录ID" width="80"></el-table-column>
           <el-table-column prop="bookTitle" label="图书名称" width="200"></el-table-column>
@@ -34,7 +40,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import axios from 'axios'
+
+const router = useRouter()
 
 const borrowRecords = ref([
   {

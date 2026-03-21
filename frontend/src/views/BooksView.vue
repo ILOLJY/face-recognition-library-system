@@ -3,7 +3,13 @@
     <el-container>
       <el-main>
         <div class="books-header">
-          <h2>图书列表</h2>
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <el-button type="default" @click="router.push('/home')">
+              <el-icon><ArrowLeft /></el-icon>
+              返回主页
+            </el-button>
+            <h2>图书列表</h2>
+          </div>
           <el-input
             v-model="searchQuery"
             placeholder="搜索图书"
@@ -36,7 +42,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import axios from 'axios'
+
+const router = useRouter()
 
 const searchQuery = ref('')
 const books = ref([
