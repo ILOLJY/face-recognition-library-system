@@ -120,7 +120,8 @@ async def register_service(user_data, db: AsyncSession):
     if not cached_code:
         raise ValueError("验证码已过期或不存在")
     
-    if cached_code.decode() != user_data.code:
+    cached_code_str = str(cached_code)
+    if cached_code_str != user_data.code:
         raise ValueError("验证码错误")
     
     # 检查用户名是否已存在

@@ -119,7 +119,7 @@ const register = async () => {
           email: registerForm.email,
           code: registerForm.code,
           avatar: '',
-          role: 'USER'
+          role: 'user'
         })
         
         loading.value = false

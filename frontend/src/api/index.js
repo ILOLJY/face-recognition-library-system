@@ -30,6 +30,12 @@ export const authApi = {
   getCurrentUser: async () => {
     const response = await api.get('/api/auth/me')
     return response.data
+  },
+  
+  // 注销登录
+  logout: async () => {
+    const response = await api.post('/api/auth/logout')
+    return response.data
   }
 }
 

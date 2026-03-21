@@ -100,13 +100,19 @@ const checkLoginStatus = async () => {
   }
 }
 
-const logout = () => {
+const logout = async () => {
   console.log('执行注销登录')
-  // 清除 cookie
-  document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-  console.log('cookie 已清除')
-  isLoggedIn.value = false
-  router.push('/login')
+  try {
+    await authApi.logout()
+    console.log('注销成功')
+    isLoggedIn.value = false
+    router.push('/login')
+  } catch (error) {
+    console.error('注销失败:', error)
+    // 即使失败也跳转到登录页面
+    isLoggedIn.value = false
+    router.push('/login')
+  }
 }
 
 // 页面加载时检查登录状态

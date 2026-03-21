@@ -142,3 +142,22 @@ async def get_current_user_id_info(
 ):
     """获取当前用户ID"""
     return {"user_id": user_id}
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(
+    response: Response
+):
+    """用户注销接口"""
+    # 删除 HttpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value="",
+        max_age=0,
+        expires=0,
+        path="/",
+        httponly=True,
+        samesite="Lax",
+        # secure=False  # 本地开发
+    )
+    return {"msg": "退出成功"}
