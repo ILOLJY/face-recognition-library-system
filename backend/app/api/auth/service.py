@@ -222,3 +222,5 @@ async def login_service(email: str, password: str, db: AsyncSession):
     )
     
     return user, access_token
+
+print("test_git")
