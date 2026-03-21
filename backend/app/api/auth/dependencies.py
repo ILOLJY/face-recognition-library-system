@@ -1,22 +1,19 @@
 """认证依赖模块"""
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, status, Cookie
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models.users import User
 from app.api.auth.jwt import verify_token
 
-security = HTTPBearer()
-
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    access_token: str = Cookie(...),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """获取当前用户
     
     Args:
-        credentials: 认证凭据
+        access_token: 从 cookie 中获取的 token
         db: 数据库会话
     
     Returns:
@@ -25,14 +22,12 @@ async def get_current_user(
     Raises:
         HTTPException: 认证失败
     """
-    token = credentials.credentials
     try:
-        payload = verify_token(token)
+        payload = verify_token(access_token)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的认证凭据",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     
     user_id = int(payload.get("sub"))
@@ -52,12 +47,12 @@ async def get_current_user(
 
 
 async def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    access_token: str = Cookie(...)
 ) -> int:
     """获取当前用户ID
     
     Args:
-        credentials: 认证凭据
+        access_token: 从 cookie 中获取的 token
     
     Returns:
         int: 用户ID
@@ -65,14 +60,12 @@ async def get_current_user_id(
     Raises:
         HTTPException: 认证失败
     """
-    token = credentials.credentials
     try:
-        payload = verify_token(token)
+        payload = verify_token(access_token)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的认证凭据",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     
     return int(payload.get("sub"))

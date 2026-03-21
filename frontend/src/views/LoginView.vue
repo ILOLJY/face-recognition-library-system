@@ -56,22 +56,25 @@ const login = async () => {
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
+      console.log('开始登录，邮箱:', loginForm.username)
       try {
         // 调用后端登录接口
-        const response = await axios.post('http://localhost:8000/api/auth/login', {
+        console.log('调用 /api/auth/login 接口')
+        const response = await axios.post('/api/auth/login', {
           email: loginForm.username, // 前端用户名输入框实际输入的是邮箱
           password: loginForm.password
         })
         
-        // 存储token和用户信息
-        localStorage.setItem('access_token', response.data.access_token)
-        localStorage.setItem('user', JSON.stringify(response.data.user))
-        
+        console.log('登录成功，返回数据:', response.data)
+        console.log('当前cookie:', document.cookie)
         loading.value = false
+        
+        // 后端已经设置了 HttpOnly cookie，直接跳转
+        console.log('登录成功，跳转到首页')
         router.push('/home')
       } catch (error) {
         loading.value = false
-        console.error('登录失败:', error)
+        console.error('登录失败:', error.response?.data || error.message)
         alert('登录失败：' + (error.response?.data?.detail || '请检查邮箱和密码'))
       }
     }

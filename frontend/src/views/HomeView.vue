@@ -22,6 +22,9 @@
           <el-menu-item index="6" v-if="!isLoggedIn">
             <router-link to="/register">注册</router-link>
           </el-menu-item>
+          <el-menu-item index="7" v-if="isLoggedIn" @click="logout">
+            注销登录
+          </el-menu-item>
         </el-menu>
       </el-header>
       <el-main>
@@ -73,8 +76,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const activeIndex = ref('1')
@@ -83,6 +87,32 @@ const isLoggedIn = ref(false)
 const goToBooks = () => {
   router.push('/books')
 }
+
+const checkLoginStatus = async () => {
+  try {
+    console.log('检查登录状态')
+    const response = await axios.get('/api/auth/me')
+    console.log('登录状态检查成功:', response.data)
+    isLoggedIn.value = true
+  } catch (error) {
+    console.log('登录状态检查失败:', error.response?.status || error.message)
+    isLoggedIn.value = false
+  }
+}
+
+const logout = () => {
+  console.log('执行注销登录')
+  // 清除 cookie
+  document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  console.log('cookie 已清除')
+  isLoggedIn.value = false
+  router.push('/login')
+}
+
+// 页面加载时检查登录状态
+onMounted(() => {
+  checkLoginStatus()
+})
 </script>
 
 <style scoped>

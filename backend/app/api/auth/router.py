@@ -87,10 +87,13 @@ async def register(
         )
 
 
+from fastapi import Response
+
 @router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def login(
     login_data: LoginRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    response: Response = Response()
 ):
     """用户登录接口"""
     try:
@@ -103,6 +106,16 @@ async def login(
             role=user.role,
             is_active=user.is_active
         )
+        
+        # 设置 HttpOnly cookie
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            samesite="lax",
+            path="/"
+        )
+        
         return TokenResponse(
             access_token=access_token,
             token_type="Bearer",

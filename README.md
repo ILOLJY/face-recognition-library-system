@@ -88,7 +88,12 @@ npm run build
 │   │   ├── api/                   # API 接口模块
 │   │   │   ├── __init__.py
 │   │   │   ├── router.py          # API 路由管理
-│   │   │   └── auth.py            # 认证接口（注册、登录）
+│   │   │   └── auth/              # 认证模块
+│   │   │       ├── __init__.py
+│   │   │       ├── router.py      # 认证路由
+│   │   │       ├── service.py     # 业务逻辑
+│   │   │       ├── jwt.py         # JWT 处理
+│   │   │       └── dependencies.py # 依赖函数
 │   │   ├── cache/                 # 缓存模块
 │   │   │   ├── __init__.py
 │   │   │   └── redis.py           # Redis 连接管理
@@ -212,6 +217,20 @@ npm run build
   }
   ```
 
+#### 5. 获取当前用户ID
+- **接口**: `GET /api/auth/me/id`
+- **描述**: 获取当前登录用户的ID（需要在请求头中携带 Authorization: Bearer <token>）
+- **请求头**:
+  ```
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  ```
+- **响应**:
+  ```json
+  {
+    "user_id": 1
+  }
+  ```
+
 ## 数据模型
 
 ### 1. 用户模型 (users.py)
@@ -251,20 +270,28 @@ pip install -r requirements.txt
 DATABASE_URL = "postgresql+asyncpg://postgres:151004@localhost:5432/library_db"
 ```
 
-### 3. 配置邮箱
+### 3. 配置环境变量
 
-在 `app/api/auth.py` 的 `send_email` 函数中配置邮箱服务器信息：
+创建 `.env` 文件或设置系统环境变量：
 
-```python
-smtp_server = "smtp.163.com"
-smtp_port = 465
-sender_email = "your_email@163.com"
-sender_password = "your_authorization_code"
+```
+# 数据库连接
+DATABASE_URL="postgresql+asyncpg://postgres:151004@localhost:5432/library_db"
+
+# JWT 密钥（生产环境必须设置）
+SECRET_KEY="your-secret-key-here"
+
+# 邮箱配置（生产环境必须设置）
+EMAIL_PASSWORD="your_163_email_authorization_code"
+
+# 环境模式
+ENVIRONMENT="development"  # 可选：development, production
 ```
 
 注意：
 - 163邮箱需要开启 SMTP 服务并获取授权码
 - 465端口需要使用 SSL 连接
+- 生产环境必须设置 SECRET_KEY 和 EMAIL_PASSWORD
 
 ### 4. 数据库迁移
 
@@ -379,7 +406,11 @@ await redis_client.set("token:123", "abc123", expire=3600)
 - ✅ Redis 缓存模块完成
 - ✅ 用户注册接口完成（两步注册流程）
 - ✅ 邮箱验证码功能完成
+- ✅ 登录接口完成（JWT 鉴权）
+- ✅ JWT 令牌验证完成
+- ✅ 认证模块代码拆分完成
 - ✅ 基本项目结构搭建
-- 🔄 登录接口开发中
 - 🔄 人脸识别集成中
+- 🔄 图书管理功能开发中
+- 🔄 借阅管理功能开发中
 - 🔄 其他核心功能开发中
