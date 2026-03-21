@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import axios from 'axios'
+import { authApi } from '../api/index.js'
 
 const routes = [
   {
@@ -53,12 +53,12 @@ router.beforeEach(async (to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     console.log('需要认证的页面:', to.path)
     try {
-      // 调用 /me 接口检查登录状态
-      console.log('调用 /api/auth/me 接口检查登录状态')
-      const response = await axios.get('/api/auth/me')
-      console.log('登录状态检查成功:', response.data)
-      // 登录成功，继续导航
-      next()
+        // 调用 /me 接口检查登录状态
+        console.log('调用 /api/auth/me 接口检查登录状态')
+        const data = await authApi.getCurrentUser()
+        console.log('登录状态检查成功:', data)
+        // 登录成功，继续导航
+        next()
     } catch (error) {
       console.log('登录状态检查失败:', error.response?.status || error.message)
       // 登录失败，跳转到登录页面

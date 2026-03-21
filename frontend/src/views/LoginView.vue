@@ -28,7 +28,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { authApi } from '../api/index.js'
 
 const router = useRouter()
 const loginFormRef = ref(null)
@@ -60,12 +60,12 @@ const login = async () => {
       try {
         // 调用后端登录接口
         console.log('调用 /api/auth/login 接口')
-        const response = await axios.post('/api/auth/login', {
+        const data = await authApi.login({
           email: loginForm.username, // 前端用户名输入框实际输入的是邮箱
           password: loginForm.password
         })
         
-        console.log('登录成功，返回数据:', response.data)
+        console.log('登录成功，返回数据:', data)
         console.log('当前cookie:', document.cookie)
         loading.value = false
         

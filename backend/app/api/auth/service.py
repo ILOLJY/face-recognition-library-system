@@ -37,16 +37,8 @@ async def send_email(to_email: str, code: str):
     smtp_server = "smtp.163.com"
     smtp_port = 465
     sender_email = "lcz1421934734@163.com"
-    sender_password = os.getenv("EMAIL_PASSWORD")
-    
-    # 开发环境下跳过邮件发送
-    if not sender_password:
-        if os.getenv("ENVIRONMENT") != "production":
-            print(f"WARNING: EMAIL_PASSWORD not set. Skipping email sending for development. Code: {code}")
-            return
-        else:
-            raise ValueError("EMAIL_PASSWORD must be set in production environment")
-    
+    sender_password = os.getenv("SMTP_PASSWORD")
+
     # 创建邮件
     message = MIMEMultipart()
     message["From"] = sender_email

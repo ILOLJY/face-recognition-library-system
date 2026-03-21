@@ -47,7 +47,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { authApi } from '../api/index.js'
 
 const router = useRouter()
 const registerFormRef = ref(null)
@@ -87,7 +87,7 @@ const sendCode = async () => {
   
   try {
     // 发送验证码
-    await axios.post('http://localhost:8000/api/auth/send-code/register', { email: registerForm.email })
+    await authApi.sendVerificationCode(registerForm.email)
     
     // 倒计时
     countdown.value = 60
@@ -113,7 +113,7 @@ const register = async () => {
       loading.value = true
       try {
         // 调用后端注册接口
-        const response = await axios.post('http://localhost:8000/api/auth/register', {
+        const data = await authApi.register({
           username: registerForm.username,
           password: registerForm.password,
           email: registerForm.email,

@@ -78,7 +78,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { authApi } from '../api/index.js'
 
 const router = useRouter()
 const activeIndex = ref('1')
@@ -91,8 +91,8 @@ const goToBooks = () => {
 const checkLoginStatus = async () => {
   try {
     console.log('检查登录状态')
-    const response = await axios.get('/api/auth/me')
-    console.log('登录状态检查成功:', response.data)
+    const data = await authApi.getCurrentUser()
+    console.log('登录状态检查成功:', data)
     isLoggedIn.value = true
   } catch (error) {
     console.log('登录状态检查失败:', error.response?.status || error.message)
