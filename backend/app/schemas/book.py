@@ -66,3 +66,15 @@ class BookResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class BookSimpleResponse(BaseModel):
+    """图书简单响应模型"""
+    id: int
+    title: str
+    author: str
+    publisher: Optional[str]
+    cover_image: Optional[str]
+    
+    class Config:
+        from_attributes = True
