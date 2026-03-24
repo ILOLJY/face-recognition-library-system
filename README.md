@@ -316,6 +316,166 @@ npm run build
   }
   ```
 
+### 管理员接口
+
+#### 1. 管理员登录
+- **接口**: `POST /api/auth/admin/login`
+- **描述**: 管理员登录，验证用户密码和管理员权限
+- **请求参数**:
+  ```json
+  {
+    "email": "admin@example.com",
+    "password": "adminpassword"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "email": "admin@example.com",
+      "avatar": "",
+      "role": "admin",
+      "is_active": true
+    }
+  }
+  ```
+
+#### 2. 获取所有图书
+- **接口**: `GET /api/admin/books`
+- **描述**: 获取所有图书信息（仅管理员可访问）
+- **响应**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Python 编程从入门到实践",
+      "author": "Eric Matthes",
+      "isbn": "9787115428028",
+      "publisher": "人民邮电出版社",
+      "publish_date": "2016-07-01",
+      "category": "计算机",
+      "description": "Python入门经典图书",
+      "cover_image": "/static/covers/1_book.jpg",
+      "total_copies": 5,
+      "available_copies": 3,
+      "location": "A区1层",
+      "status": "available",
+      "created_at": "2026-03-18T00:00:00",
+      "updated_at": "2026-03-18T00:00:00"
+    }
+  ]
+  ```
+
+#### 3. 添加图书
+- **接口**: `POST /api/admin/books`
+- **描述**: 添加新图书（仅管理员可访问）
+- **请求参数**:
+  ```json
+  {
+    "title": "深入理解计算机系统",
+    "author": "Randal E. Bryant",
+    "isbn": "9787111407010",
+    "publisher": "机械工业出版社",
+    "publish_date": "2016-01-01",
+    "category": "计算机",
+    "description": "深入理解计算机系统原理",
+    "total_copies": 3,
+    "available_copies": 3,
+    "location": "A区2层"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 2,
+    "title": "深入理解计算机系统",
+    "author": "Randal E. Bryant",
+    "isbn": "9787111407010",
+    "publisher": "机械工业出版社",
+    "publish_date": "2016-01-01",
+    "category": "计算机",
+    "description": "深入理解计算机系统原理",
+    "cover_image": null,
+    "total_copies": 3,
+    "available_copies": 3,
+    "location": "A区2层",
+    "status": "available",
+    "created_at": "2026-03-24T00:00:00",
+    "updated_at": "2026-03-24T00:00:00"
+  }
+  ```
+
+#### 4. 编辑图书
+- **接口**: `PUT /api/admin/books/{book_id}`
+- **描述**: 编辑图书信息（仅管理员可访问）
+- **请求参数**:
+  ```json
+  {
+    "title": "深入理解计算机系统（第3版）",
+    "total_copies": 5,
+    "available_copies": 5
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 2,
+    "title": "深入理解计算机系统（第3版）",
+    "author": "Randal E. Bryant",
+    "isbn": "9787111407010",
+    "publisher": "机械工业出版社",
+    "publish_date": "2016-01-01",
+    "category": "计算机",
+    "description": "深入理解计算机系统原理",
+    "cover_image": null,
+    "total_copies": 5,
+    "available_copies": 5,
+    "location": "A区2层",
+    "status": "available",
+    "created_at": "2026-03-24T00:00:00",
+    "updated_at": "2026-03-24T00:00:00"
+  }
+  ```
+
+#### 5. 删除图书
+- **接口**: `DELETE /api/admin/books/{book_id}`
+- **描述**: 删除图书（仅管理员可访问）
+- **响应**:
+  ```json
+  {
+    "msg": "图书删除成功"
+  }
+  ```
+
+#### 6. 上传图书封面
+- **接口**: `POST /api/admin/books/{book_id}/cover`
+- **描述**: 上传图书封面（仅管理员可访问）
+- **请求参数**: 表单数据，字段名为 `file`，类型为文件
+- **响应**:
+  ```json
+  {
+    "id": 2,
+    "title": "深入理解计算机系统（第3版）",
+    "author": "Randal E. Bryant",
+    "isbn": "9787111407010",
+    "publisher": "机械工业出版社",
+    "publish_date": "2016-01-01",
+    "category": "计算机",
+    "description": "深入理解计算机系统原理",
+    "cover_image": "/static/covers/2_book.jpg",
+    "total_copies": 5,
+    "available_copies": 5,
+    "location": "A区2层",
+    "status": "available",
+    "created_at": "2026-03-24T00:00:00",
+    "updated_at": "2026-03-24T00:00:00"
+  }
+  ```
+
 ## 数据模型
 
 ### 1. 用户模型 (users.py)

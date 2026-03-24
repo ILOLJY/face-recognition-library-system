@@ -23,6 +23,9 @@
                 管理员登录
               </el-button>
             </div>
+            <div class="readme-link">
+              <el-button type="text" @click="goToReadme">查看系统文档</el-button>
+            </div>
           </el-form>
         </div>
       </el-main>
@@ -96,6 +99,11 @@ const goToAdminLogin = () => {
   console.log('跳转到管理员登录页面')
   router.push('/admin/login')
 }
+
+const goToReadme = () => {
+  console.log('跳转到系统文档')
+  router.push('/readme')
+}
 </script>
 
 <style scoped>
@@ -135,5 +143,10 @@ const goToAdminLogin = () => {
 
 .admin-login {
   margin-top: 20px;
+}
+
+.readme-link {
+  margin-top: 20px;
+  text-align: center;
 }
 </style>

@@ -16,13 +16,16 @@
           <el-menu-item index="4">
             <router-link to="/profile">个人中心</router-link>
           </el-menu-item>
-          <el-menu-item index="5" v-if="!isLoggedIn">
-            <router-link to="/login">登录</router-link>
+          <el-menu-item index="5" @click="goToReadme">
+            系统文档
           </el-menu-item>
           <el-menu-item index="6" v-if="!isLoggedIn">
+            <router-link to="/login">登录</router-link>
+          </el-menu-item>
+          <el-menu-item index="7" v-if="!isLoggedIn">
             <router-link to="/register">注册</router-link>
           </el-menu-item>
-          <el-menu-item index="7" v-if="isLoggedIn" @click="logout">
+          <el-menu-item index="8" v-if="isLoggedIn" @click="logout">
             注销登录
           </el-menu-item>
         </el-menu>
@@ -113,6 +116,11 @@ const logout = async () => {
     isLoggedIn.value = false
     router.push('/login')
   }
+}
+
+const goToReadme = () => {
+  console.log('跳转到系统文档')
+  router.push('/readme')
 }
 
 // 页面加载时检查登录状态

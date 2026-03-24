@@ -1,5 +1,5 @@
 """图书相关的 Pydantic schemas"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional
 from datetime import datetime
 
@@ -17,6 +17,12 @@ class BookCreate(BaseModel):
     total_copies: int = Field(1, ge=1, description="图书总册数")
     available_copies: int = Field(1, ge=0, description="可借阅册数")
     location: Optional[str] = Field(None, max_length=50, description="存放位置")
+    
+    @validator("publish_date")
+    def remove_timezone(cls, v):
+        if v and v.tzinfo:
+            return v.replace(tzinfo=None)
+        return v
 
 
 class BookUpdate(BaseModel):
@@ -32,6 +38,12 @@ class BookUpdate(BaseModel):
     total_copies: Optional[int] = Field(None, ge=1, description="图书总册数")
     available_copies: Optional[int] = Field(None, ge=0, description="可借阅册数")
     location: Optional[str] = Field(None, max_length=50, description="存放位置")
+    
+    @validator("publish_date")
+    def remove_timezone(cls, v):
+        if v and v.tzinfo:
+            return v.replace(tzinfo=None)
+        return v
 
 
 class BookResponse(BaseModel):

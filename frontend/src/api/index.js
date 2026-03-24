@@ -80,4 +80,42 @@ export const userApi = {
   }
 }
 
+export const bookApi = {
+  // 获取所有图书
+  getAllBooks: async () => {
+    const response = await api.get('/api/admin/books')
+    return response.data
+  },
+  
+  // 添加图书
+  addBook: async (bookData) => {
+    const response = await api.post('/api/admin/books', bookData)
+    return response.data
+  },
+  
+  // 编辑图书
+  updateBook: async (bookId, bookData) => {
+    const response = await api.put(`/api/admin/books/${bookId}`, bookData)
+    return response.data
+  },
+  
+  // 删除图书
+  deleteBook: async (bookId) => {
+    const response = await api.delete(`/api/admin/books/${bookId}`)
+    return response.data
+  },
+  
+  // 上传图书封面
+  uploadCover: async (bookId, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post(`/api/admin/books/${bookId}/cover`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  }
+}
+
 export default api

@@ -1,5 +1,6 @@
 Please always reply to me in Chinese.
 
+不要自己开前后端服务器，我自己开
 一、项目基础规则
 1️⃣ 技术栈固定规则
 
