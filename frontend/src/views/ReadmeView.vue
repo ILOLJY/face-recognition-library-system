@@ -114,6 +114,8 @@
                 <li>图书查询与借阅</li>
                 <li>借阅记录查询</li>
                 <li>人脸信息管理</li>
+                <li>最近借阅图书查看</li>
+                <li>图书搜索</li>
               </ul>
               <h3>管理员功能</h3>
               <ul>
@@ -252,6 +254,66 @@
                       <td>/api/admin/books/{book_id}/cover</td>
                       <td>POST</td>
                       <td>上传图书封面</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div id="book-api" class="api-subsection">
+                <h3>图书接口</h3>
+                <table class="api-table">
+                  <thead>
+                    <tr>
+                      <th>接口</th>
+                      <th>方法</th>
+                      <th>描述</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>/api/books/recent</td>
+                      <td>GET</td>
+                      <td>获取最近借阅的图书</td>
+                    </tr>
+                    <tr>
+                      <td>/api/books/{book_id}</td>
+                      <td>GET</td>
+                      <td>获取图书详情</td>
+                    </tr>
+                    <tr>
+                      <td>/api/books/search</td>
+                      <td>GET</td>
+                      <td>搜索图书</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div id="borrow-api" class="api-subsection">
+                <h3>借阅接口</h3>
+                <table class="api-table">
+                  <thead>
+                    <tr>
+                      <th>接口</th>
+                      <th>方法</th>
+                      <th>描述</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>/api/borrow/borrow</td>
+                      <td>POST</td>
+                      <td>借阅图书</td>
+                    </tr>
+                    <tr>
+                      <td>/api/borrow/return/{record_id}</td>
+                      <td>POST</td>
+                      <td>归还图书</td>
+                    </tr>
+                    <tr>
+                      <td>/api/borrow/records</td>
+                      <td>GET</td>
+                      <td>获取用户借阅记录</td>
                     </tr>
                   </tbody>
                 </table>
@@ -485,10 +547,15 @@ await redis_client.set("token:123", "abc123", expire=3600)</code></pre>
                 <li>✅ 登录接口完成（JWT 鉴权）</li>
                 <li>✅ JWT 令牌验证完成</li>
                 <li>✅ 基本项目结构搭建</li>
+                <li>✅ 前端路由守卫完成</li>
+                <li>✅ 后端鉴权机制完成</li>
+                <li>✅ 管理员登录和管理页面完成</li>
+                <li>✅ 图书管理功能完成</li>
+                <li>✅ 借阅管理功能完成</li>
+                <li>✅ 最近借阅图书列表功能完成</li>
+                <li>✅ 图书搜索功能完成</li>
+                <li>✅ 前端API接口封装完成</li>
                 <li>🔄 人脸识别集成中</li>
-                <li>🔄 图书管理功能开发中</li>
-                <li>🔄 借阅管理功能开发中</li>
-                <li>🔄 其他核心功能开发中</li>
               </ul>
             </div>
           </div>

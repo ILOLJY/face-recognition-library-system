@@ -20,13 +20,17 @@ frontend/
 │   ├── assets/         # 资源文件
 │   ├── components/     # 组件
 │   ├── router/         # 路由配置
-│   ├── views/          # 视图页面
-│   │   ├── HomeView.vue       # 首页
-│   │   ├── LoginView.vue      # 登录页
-│   │   ├── RegisterView.vue   # 注册页
-│   │   ├── BooksView.vue      # 图书列表
-│   │   ├── BorrowView.vue     # 借阅记录
-│   │   └── ProfileView.vue    # 个人中心
+│   │   ├── views/          # 视图页面
+│   │   │   ├── HomeView.vue       # 首页
+│   │   │   ├── LoginView.vue      # 登录页
+│   │   │   ├── RegisterView.vue   # 注册页
+│   │   │   ├── BooksView.vue      # 图书列表
+│   │   │   ├── BookDetailView.vue # 图书详情
+│   │   │   ├── BorrowView.vue     # 借阅记录
+│   │   │   ├── ProfileView.vue    # 个人中心
+│   │   │   ├── ReadmeView.vue     # 系统文档
+│   │   │   ├── AdminLoginView.vue # 管理员登录页
+│   │   │   └── AdminView.vue      # 管理员页面
 │   ├── App.vue         # 应用入口
 │   ├── main.js         # 主文件
 │   └── style.css       # 全局样式
@@ -125,6 +129,8 @@ npm run build
 - **借阅管理**：借阅登记、归还核验、续借功能
 - **逾期提醒**：自动检测逾期记录并发送提醒
 - **统计分析**：借阅数据统计、热门图书分析
+- **最近借阅**：基于Redis List实现最近借阅图书列表，新借阅的图书放在最上面
+- **图书搜索**：支持按标题、作者、出版社搜索图书
 
 ## API 接口
 
@@ -476,6 +482,134 @@ npm run build
   }
   ```
 
+### 图书接口
+
+#### 1. 获取最近借阅的图书
+- **接口**: `GET /api/books/recent`
+- **描述**: 获取最近借阅的图书（最多10本），Redis 实时维护，新借阅的图书放在最上面
+- **响应**:
+  ```json
+  [
+    {
+      "id": 2,
+      "title": "深入理解计算机系统",
+      "author": "Randal E. Bryant",
+      "publisher": "机械工业出版社",
+      "cover_image": "/static/covers/2_book.jpg"
+    }
+  ]
+  ```
+
+#### 2. 获取图书详情
+- **接口**: `GET /api/books/{book_id}`
+- **描述**: 获取指定图书的详细信息
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "title": "Python 编程从入门到实践",
+    "author": "Eric Matthes",
+    "isbn": "9787115428028",
+    "publisher": "人民邮电出版社",
+    "publish_date": "2016-07-01",
+    "category": "计算机",
+    "description": "Python入门经典图书",
+    "cover_image": "/static/covers/1_book.jpg",
+    "total_copies": 5,
+    "available_copies": 3,
+    "location": "A区1层",
+    "status": "available",
+    "created_at": "2026-03-18T00:00:00",
+    "updated_at": "2026-03-18T00:00:00"
+  }
+  ```
+
+#### 3. 搜索图书
+- **接口**: `GET /api/books/search?keyword=Python`
+- **描述**: 根据关键词搜索图书，支持搜索标题、作者、出版社、分类和描述
+- **响应**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Python 编程从入门到实践",
+      "author": "Eric Matthes",
+      "publisher": "人民邮电出版社",
+      "cover_image": "/static/covers/1_book.jpg"
+    }
+  ]
+  ```
+
+### 借阅接口
+
+#### 1. 借阅图书
+- **接口**: `POST /api/borrow/borrow`
+- **描述**: 借阅图书
+- **请求参数**:
+  ```json
+  {
+    "book_id": 1
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "user_id": 1,
+    "book_id": 1,
+    "borrow_date": "2026-03-24T00:00:00",
+    "due_date": "2026-04-07T00:00:00",
+    "return_date": null,
+    "status": "borrowed",
+    "renew_count": 0,
+    "fine_amount": 0.0,
+    "created_at": "2026-03-24T00:00:00",
+    "updated_at": "2026-03-24T00:00:00"
+  }
+  ```
+
+#### 2. 归还图书
+- **接口**: `POST /api/borrow/return/{record_id}`
+- **描述**: 归还图书
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "user_id": 1,
+    "book_id": 1,
+    "borrow_date": "2026-03-24T00:00:00",
+    "due_date": "2026-04-07T00:00:00",
+    "return_date": "2026-04-01T00:00:00",
+    "status": "returned",
+    "renew_count": 0,
+    "fine_amount": 0.0,
+    "created_at": "2026-03-24T00:00:00",
+    "updated_at": "2026-04-01T00:00:00"
+  }
+  ```
+
+#### 3. 获取用户借阅记录
+- **接口**: `GET /api/borrow/records`
+- **描述**: 获取当前用户的借阅记录
+- **响应**:
+  ```json
+  [
+    {
+      "id": 1,
+      "user_id": 1,
+      "book_id": 1,
+      "borrow_date": "2026-03-24T00:00:00",
+      "due_date": "2026-04-07T00:00:00",
+      "return_date": null,
+      "status": "borrowed",
+      "renew_count": 0,
+      "fine_amount": 0.0,
+      "created_at": "2026-03-24T00:00:00",
+      "updated_at": "2026-03-24T00:00:00"
+    }
+  ]
+  ```
+
 ## 数据模型
 
 ### 1. 用户模型 (users.py)
@@ -659,7 +793,12 @@ await redis_client.set("token:123", "abc123", expire=3600)
 - ✅ 登录接口完成（JWT 鉴权）
 - ✅ JWT 令牌验证完成
 - ✅ 基本项目结构搭建
+- ✅ 前端路由守卫完成
+- ✅ 后端鉴权机制完成
+- ✅ 管理员登录和管理页面完成
+- ✅ 图书管理功能完成
+- ✅ 借阅管理功能完成
+- ✅ 最近借阅图书列表功能完成
+- ✅ 图书搜索功能完成
+- ✅ 前端API接口封装完成
 - 🔄 人脸识别集成中
-- 🔄 图书管理功能开发中
-- 🔄 借阅管理功能开发中
-- 🔄 其他核心功能开发中
