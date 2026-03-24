@@ -8,29 +8,31 @@
               <el-icon><ArrowLeft /></el-icon>
               返回主页
             </el-button>
-            <h2>图书列表</h2>
+            <h2>{{ isSearching ? '搜索结果' : '最近借阅' }}</h2>
           </div>
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索图书"
-            prefix-icon="el-icon-search"
-            style="width: 300px"
-          ></el-input>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索图书"
+              prefix-icon="el-icon-search"
+              style="width: 300px"
+              @keyup.enter="searchBooks"
+            >
+              <template #append>
+                <el-button @click="searchBooks">搜索</el-button>
+              </template>
+            </el-input>
+            <el-button v-if="isSearching" @click="resetSearch">重置</el-button>
+          </div>
         </div>
         <el-row :gutter="20">
           <el-col :span="6" v-for="book in books" :key="book.id">
-            <el-card shadow="hover" class="book-card">
-              <img :src="book.cover" class="book-cover" v-if="book.cover" />
+            <el-card shadow="hover" class="book-card" @click="goToBookDetail(book.id)">
+              <img :src="book.cover_image" class="book-cover" v-if="book.cover_image" />
               <div class="book-info">
                 <h3>{{ book.title }}</h3>
                 <p class="author">作者：{{ book.author }}</p>
-                <p class="category">分类：{{ book.category }}</p>
-                <p class="status" :class="book.status === 'AVAILABLE' ? 'available' : 'borrowed'">
-                  {{ book.status === 'AVAILABLE' ? '可借阅' : '已借出' }}
-                </p>
-                <el-button type="primary" size="small" @click="borrowBook(book)" :disabled="book.status !== 'AVAILABLE'">
-                  借阅
-                </el-button>
+                <p class="publisher">出版社：{{ book.publisher || '未知' }}</p>
               </div>
             </el-card>
           </el-col>
@@ -44,64 +46,50 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import axios from 'axios'
+import { bookApi } from '../api/index.js'
 
 const router = useRouter()
 
+const books = ref([])
 const searchQuery = ref('')
-const books = ref([
-  {
-    id: 1,
-    title: 'Python 编程从入门到实践',
-    author: 'Eric Matthes',
-    category: '计算机',
-    status: 'AVAILABLE',
-    cover: ''
-  },
-  {
-    id: 2,
-    title: '深入理解计算机系统',
-    author: 'Randal E. Bryant',
-    category: '计算机',
-    status: 'BORROWED',
-    cover: ''
-  },
-  {
-    id: 3,
-    title: '算法导论',
-    author: 'Thomas H. Cormen',
-    category: '计算机',
-    status: 'AVAILABLE',
-    cover: ''
-  },
-  {
-    id: 4,
-    title: 'JavaScript 高级程序设计',
-    author: 'Nicholas C. Zakas',
-    category: '计算机',
-    status: 'AVAILABLE',
-    cover: ''
-  }
-])
+const isSearching = ref(false)
 
-const borrowBook = (book) => {
-  console.log('借阅图书:', book)
-  // 这里需要实现借阅逻辑
+const goToBookDetail = (bookId) => {
+  router.push(`/book/${bookId}`)
+}
+
+const searchBooks = async () => {
+  if (!searchQuery.value.trim()) {
+    return
+  }
+  
+  try {
+    isSearching.value = true
+    const data = await bookApi.searchBooks(searchQuery.value)
+    books.value = data
+  } catch (error) {
+    console.error('搜索图书失败:', error)
+  }
+}
+
+const resetSearch = () => {
+  searchQuery.value = ''
+  isSearching.value = false
+  fetchRecentBooks()
+}
+
+const fetchRecentBooks = async () => {
+  try {
+    const data = await bookApi.getRecentBooks()
+    books.value = data
+  } catch (error) {
+    console.error('获取最近借阅图书失败:', error)
+  }
 }
 
 onMounted(() => {
-  // 这里需要从后端获取图书列表
-  // fetchBooks()
+  fetchRecentBooks()
 })
-
-const fetchBooks = async () => {
-  try {
-    // const response = await axios.get('/api/books')
-    // books.value = response.data
-  } catch (error) {
-    console.error('获取图书列表失败:', error)
-  }
-}
 </script>
 
 <style scoped>
@@ -127,6 +115,12 @@ const fetchBooks = async () => {
   height: 300px;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-5px);
 }
 
 .book-cover {
@@ -148,7 +142,7 @@ const fetchBooks = async () => {
   color: #303133;
 }
 
-.author, .category {
+.author, .publisher {
   font-size: 14px;
   color: #606266;
   margin: 5px 0;

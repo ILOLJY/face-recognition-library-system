@@ -56,3 +56,52 @@ async def get_recent_borrow_books(
         sorted_books.extend(additional_books)
     
     return sorted_books
+
+
+@router.get("/search", response_model=List[BookSimpleResponse], status_code=status.HTTP_200_OK)
+async def search_books(
+    keyword: str = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """搜索图书"""
+    if not keyword:
+        return []
+    
+    from sqlalchemy import select, or_
+    result = await db.execute(
+        select(Book)
+        .where(
+            or_(
+                Book.title.ilike(f"%{keyword}%"),
+                Book.author.ilike(f"%{keyword}%"),
+                Book.publisher.ilike(f"%{keyword}%"),
+                Book.category.ilike(f"%{keyword}%"),
+                Book.description.ilike(f"%{keyword}%")
+            )
+        )
+        .limit(20)
+    )
+    books = result.scalars().all()
+    
+    return books
+
+
+@router.get("/{book_id}", response_model=BookResponse, status_code=status.HTTP_200_OK)
+async def get_book_detail(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取图书详情"""
+    from sqlalchemy import select
+    result = await db.execute(select(Book).where(Book.id == book_id))
+    book = result.scalar()
+    
+    if not book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="图书不存在"
+        )
+    
+    return book

@@ -87,6 +87,18 @@ export const bookApi = {
     return response.data
   },
   
+  // 获取最近借阅的图书
+  getRecentBooks: async () => {
+    const response = await api.get('/api/books/recent')
+    return response.data
+  },
+  
+  // 搜索图书
+  searchBooks: async (keyword) => {
+    const response = await api.get(`/api/books/search?keyword=${encodeURIComponent(keyword)}`)
+    return response.data
+  },
+  
   // 添加图书
   addBook: async (bookData) => {
     const response = await api.post('/api/admin/books', bookData)
