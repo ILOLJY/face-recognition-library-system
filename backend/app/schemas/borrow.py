@@ -14,6 +14,8 @@ class BorrowResponse(BaseModel):
     id: int
     user_id: int
     book_id: int
+    book_title: str
+    book_author: str
     borrow_date: datetime
     due_date: datetime
     return_date: Optional[datetime]

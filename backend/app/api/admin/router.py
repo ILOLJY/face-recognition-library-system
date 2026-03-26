@@ -136,7 +136,7 @@ async def upload_book_cover(
         f.write(content)
     
     # 更新图书封面路径
-    db_book.cover = f"/static/covers/{book_id}_{file.filename}"
+    db_book.cover_image = f"/static/covers/{book_id}_{file.filename}"
     await db.commit()
     await db.refresh(db_book)
     

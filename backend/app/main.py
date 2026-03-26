@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 import sys
@@ -50,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ================= 静态文件服务 =================
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # ================= 路由 =================
 app.include_router(api_router, prefix="/api")

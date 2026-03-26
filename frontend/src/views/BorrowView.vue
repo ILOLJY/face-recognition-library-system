@@ -11,10 +11,26 @@
         </div>
         <el-table :data="borrowRecords" style="width: 100%">
           <el-table-column prop="id" label="记录ID" width="80"></el-table-column>
-          <el-table-column prop="bookTitle" label="图书名称" width="200"></el-table-column>
-          <el-table-column prop="borrowDate" label="借阅日期"></el-table-column>
-          <el-table-column prop="dueDate" label="应还日期"></el-table-column>
-          <el-table-column prop="returnDate" label="实际归还日期"></el-table-column>
+          <el-table-column label="图书名称" width="200">
+            <template #default="scope">
+              {{ scope.row.book_title || '未知' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="借阅日期">
+            <template #default="scope">
+              {{ formatDate(scope.row.borrow_date) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="应还日期">
+            <template #default="scope">
+              {{ formatDate(scope.row.due_date) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="实际归还日期">
+            <template #default="scope">
+              {{ formatDate(scope.row.return_date) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态">
             <template #default="scope">
               <el-tag :type="getStatusType(scope.row.status)">
@@ -24,10 +40,10 @@
           </el-table-column>
           <el-table-column label="操作" width="150">
             <template #default="scope">
-              <el-button type="primary" size="small" @click="returnBook(scope.row)" v-if="scope.row.status === 'BORROWED'">
+              <el-button type="primary" size="small" @click="returnBook(scope.row)" v-if="['borrowed', 'renewed', 'overdue'].includes(scope.row.status)">
                 归还
               </el-button>
-              <el-button type="warning" size="small" @click="renewBook(scope.row)" v-if="scope.row.status === 'BORROWED'">
+              <el-button type="warning" size="small" @click="renewBook(scope.row)" v-if="['borrowed', 'overdue'].includes(scope.row.status)">
                 续借
               </el-button>
             </template>
@@ -42,68 +58,81 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
 const router = useRouter()
 
-const borrowRecords = ref([
-  {
-    id: 1,
-    bookTitle: 'Python 编程从入门到实践',
-    borrowDate: '2026-03-01',
-    dueDate: '2026-03-15',
-    returnDate: null,
-    status: 'BORROWED'
-  },
-  {
-    id: 2,
-    bookTitle: '深入理解计算机系统',
-    borrowDate: '2026-02-15',
-    dueDate: '2026-03-01',
-    returnDate: '2026-02-28',
-    status: 'RETURNED'
-  }
-])
+const borrowRecords = ref([])
+
+// 日期格式化函数
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 const getStatusType = (status) => {
-  switch (status) {
-    case 'BORROWED': return 'primary'
-    case 'RETURNED': return 'success'
-    case 'OVERDUE': return 'danger'
-    case 'RENEWED': return 'warning'
+  const statusLower = status.toLowerCase()
+  switch (statusLower) {
+    case 'borrowed': return 'primary'
+    case 'returned': return 'success'
+    case 'overdue': return 'danger'
+    case 'renewed': return 'warning'
     default: return 'info'
   }
 }
 
 const getStatusText = (status) => {
-  switch (status) {
-    case 'BORROWED': return '借阅中'
-    case 'RETURNED': return '已归还'
-    case 'OVERDUE': return '逾期'
-    case 'RENEWED': return '已续借'
+  const statusLower = status.toLowerCase()
+  switch (statusLower) {
+    case 'borrowed': return '借阅中'
+    case 'returned': return '已归还'
+    case 'overdue': return '逾期'
+    case 'renewed': return '已续借'
     default: return status
   }
 }
 
-const returnBook = (record) => {
-  console.log('归还图书:', record)
-  // 这里需要实现归还逻辑
+const returnBook = async (record) => {
+  try {
+    await axios.post(`/api/borrow/return/${record.id}`)
+    ElMessage.success('归还成功')
+    // 重新获取借阅记录
+    fetchBorrowRecords()
+  } catch (error) {
+    console.error('归还失败:', error)
+    ElMessage.error('归还失败：' + (error.response?.data?.detail || '请检查网络连接'))
+  }
 }
 
-const renewBook = (record) => {
-  console.log('续借图书:', record)
-  // 这里需要实现续借逻辑
+const renewBook = async (record) => {
+  try {
+    await axios.post(`/api/borrow/renew/${record.id}`)
+    ElMessage.success('续借成功')
+    // 重新获取借阅记录
+    fetchBorrowRecords()
+  } catch (error) {
+    console.error('续借失败:', error)
+    ElMessage.error('续借失败：' + (error.response?.data?.detail || '请检查网络连接'))
+  }
 }
 
 onMounted(() => {
-  // 这里需要从后端获取借阅记录
-  // fetchBorrowRecords()
+  // 从后端获取借阅记录
+  fetchBorrowRecords()
 })
 
 const fetchBorrowRecords = async () => {
   try {
-    // const response = await axios.get('/api/borrow/records')
-    // borrowRecords.value = response.data
+    const response = await axios.get('/api/borrow/records')
+    borrowRecords.value = response.data
   } catch (error) {
     console.error('获取借阅记录失败:', error)
   }

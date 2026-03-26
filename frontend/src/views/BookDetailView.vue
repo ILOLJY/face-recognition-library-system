@@ -12,7 +12,7 @@
         <el-row :gutter="20" v-if="book">
           <el-col :span="8">
             <el-card shadow="hover">
-              <img :src="book.cover_image" class="book-cover" v-if="book.cover_image" />
+              <img :src="'http://localhost:8000' + book.cover_image" class="book-cover" v-if="book.cover_image" />
               <div v-else class="no-cover">
                 <el-icon><Picture /></el-icon>
                 <p>暂无封面</p>
@@ -52,6 +52,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, Picture } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
 const router = useRouter()
@@ -65,7 +66,8 @@ const formatDate = (dateString) => {
 }
 
 const getStatusText = (status) => {
-  switch (status) {
+  const statusUpper = status.toUpperCase()
+  switch (statusUpper) {
     case 'AVAILABLE': return '可借阅'
     case 'BORROWED': return '已借出'
     case 'RESERVED': return '已预约'
@@ -75,9 +77,18 @@ const getStatusText = (status) => {
   }
 }
 
-const borrowBook = () => {
-  console.log('借阅图书:', book.value)
-  // 这里需要实现借阅逻辑
+const borrowBook = async () => {
+  try {
+    const response = await axios.post('/api/borrow/borrow', {
+      book_id: book.value.id
+    })
+    ElMessage.success('借阅成功')
+    // 重新获取图书详情，更新可借册数和状态
+    fetchBookDetail()
+  } catch (error) {
+    console.error('借阅失败:', error)
+    ElMessage.error('借阅失败：' + (error.response?.data?.detail || '请检查网络连接'))
+  }
 }
 
 const fetchBookDetail = async () => {
@@ -117,7 +128,8 @@ onMounted(() => {
 .book-cover {
   width: 100%;
   height: 300px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f0f0f0;
 }
 
 .no-cover {

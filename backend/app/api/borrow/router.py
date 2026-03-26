@@ -65,6 +65,10 @@ async def borrow_book(
     await db.commit()
     await db.refresh(borrow_record)
     
+    # 为借阅记录添加图书信息
+    borrow_record.book_title = book.title
+    borrow_record.book_author = book.author
+    
     # 更新Redis中的最近借阅图书列表
     redis_client = await get_redis()
     # 先删除旧的记录（去重）
@@ -123,6 +127,10 @@ async def return_book(
     await db.commit()
     await db.refresh(borrow_record)
     
+    # 为借阅记录添加图书信息
+    borrow_record.book_title = book.title
+    borrow_record.book_author = book.author
+    
     return borrow_record
 
 
@@ -133,9 +141,69 @@ async def get_borrow_records(
 ):
     """获取用户的借阅记录"""
     from sqlalchemy import select
+    # 关联查询获取图书信息
     result = await db.execute(
-        select(BorrowRecord).where(BorrowRecord.user_id == current_user.id)
+        select(BorrowRecord, Book.title, Book.author).join(
+            Book, BorrowRecord.book_id == Book.id
+        ).where(BorrowRecord.user_id == current_user.id)
     )
-    records = result.scalars().all()
+    
+    records = []
+    for borrow_record, book_title, book_author in result:
+        # 为借阅记录添加图书信息
+        borrow_record.book_title = book_title
+        borrow_record.book_author = book_author
+        records.append(borrow_record)
     
     return records
+
+
+@router.post("/renew/{record_id}", response_model=BorrowResponse, status_code=status.HTTP_200_OK)
+async def renew_book(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """续借图书"""
+    # 查找借阅记录
+    from sqlalchemy import select
+    result = await db.execute(
+        select(BorrowRecord).where(
+            BorrowRecord.id == record_id,
+            BorrowRecord.user_id == current_user.id,
+            BorrowRecord.status.in_([BorrowStatus.BORROWED, BorrowStatus.OVERDUE])
+        )
+    )
+    borrow_record = result.scalar()
+    
+    if not borrow_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="借阅记录不存在或已归还"
+        )
+    
+    # 检查续借次数
+    if borrow_record.renew_count >= 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="续借次数已达上限"
+        )
+    
+    # 更新借阅记录
+    borrow_record.due_date += timedelta(days=14)  # 续借14天
+    borrow_record.renew_count += 1
+    borrow_record.status = BorrowStatus.RENEWED
+    
+    # 保存到数据库
+    await db.commit()
+    await db.refresh(borrow_record)
+    
+    # 获取图书信息
+    result = await db.execute(select(Book).where(Book.id == borrow_record.book_id))
+    book = result.scalar()
+    
+    # 为借阅记录添加图书信息
+    borrow_record.book_title = book.title
+    borrow_record.book_author = book.author
+    
+    return borrow_record

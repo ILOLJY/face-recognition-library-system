@@ -28,7 +28,7 @@
         <el-row :gutter="20">
           <el-col :span="6" v-for="book in books" :key="book.id">
             <el-card shadow="hover" class="book-card" @click="goToBookDetail(book.id)">
-              <img :src="book.cover_image" class="book-cover" v-if="book.cover_image" />
+              <img :src="'http://localhost:8000' + book.cover_image" class="book-cover" v-if="book.cover_image" />
               <div class="book-info">
                 <h3>{{ book.title }}</h3>
                 <p class="author">作者：{{ book.author }}</p>
@@ -112,7 +112,7 @@ onMounted(() => {
 }
 
 .book-card {
-  height: 300px;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -125,9 +125,10 @@ onMounted(() => {
 
 .book-cover {
   width: 100%;
-  height: 150px;
-  object-fit: cover;
+  height: 180px;
+  object-fit: contain;
   margin-bottom: 15px;
+  background: #f0f0f0;
 }
 
 .book-info {

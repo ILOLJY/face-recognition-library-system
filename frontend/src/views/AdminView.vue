@@ -102,7 +102,7 @@
             :show-file-list="false"
             :http-request="handleCoverUpload"
           >
-            <img v-if="bookForm.cover_image" :src="bookForm.cover_image" class="avatar" />
+            <img v-if="bookForm.cover_image" :src="'http://localhost:8000' + bookForm.cover_image" class="avatar" />
             <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </el-form-item>
@@ -255,10 +255,14 @@ const handleCoverUpload = async (file) => {
     ElMessage.error('请先保存图书信息，再上传封面')
     return
   }
-  
+
   try {
-    await bookApi.uploadCover(bookForm.value.id, file.file)
+    const response = await bookApi.uploadCover(bookForm.value.id, file.file)
     ElMessage.success('封面上传成功')
+    // 更新当前表单的封面图片
+    if (response && response.cover_image) {
+      bookForm.value.cover_image = response.cover_image
+    }
     // 重新获取图书列表
     fetchBooks()
   } catch (error) {
@@ -333,5 +337,7 @@ onMounted(() => {
   width: 178px;
   height: 178px;
   display: block;
+  object-fit: contain;
+  background: #f0f0f0;
 }
 </style>
