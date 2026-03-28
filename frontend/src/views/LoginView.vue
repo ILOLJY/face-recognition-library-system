@@ -24,7 +24,7 @@
               </el-button>
             </div>
             <div class="readme-link">
-              <el-button type="text" @click="goToReadme">查看系统文档</el-button>
+              <el-button link @click="goToReadme">查看系统文档</el-button>
             </div>
           </el-form>
         </div>
