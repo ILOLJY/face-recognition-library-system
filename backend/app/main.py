@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 import sys
-
+from insightface.app import FaceAnalysis
 from app.db.session import engine
 from app.db.base import Base
 from app.api.router import api_router
