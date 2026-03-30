@@ -130,4 +130,30 @@ export const bookApi = {
   }
 }
 
+export const faceApi = {
+  // 注册人脸（上传人脸图片）
+  registerFace: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post('/api/face/register', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  },
+
+  // 获取当前用户人脸数据
+  getFaceData: async () => {
+    const response = await api.get('/api/face/data')
+    return response.data
+  },
+
+  // 删除当前用户人脸数据
+  deleteFaceData: async () => {
+    const response = await api.delete('/api/face/data')
+    return response.data
+  }
+}
+
 export default api
