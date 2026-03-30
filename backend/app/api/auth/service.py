@@ -164,7 +164,7 @@ async def register_service(user_data, db: AsyncSession):
     # 为用户创建空的人脸数据记录
     face_data = FaceData(
         user_id=new_user.id,
-        face_encoding=b'',  # 空的人脸特征
+        face_encoding=[],  # 空的人脸特征（JSON数组）
         face_image_path=None
     )
     

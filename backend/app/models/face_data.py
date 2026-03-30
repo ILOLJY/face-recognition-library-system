@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import String, Integer, DateTime, ForeignKey, LargeBinary,JSON
+from typing import Optional, List
+from sqlalchemy import String, Integer, DateTime, ForeignKey, LargeBinary, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -22,7 +22,7 @@ class FaceData(Base):
     )
 
     # 人脸数据
-    face_encoding: Mapped[list[float]] = mapped_column(JSON, nullable=False, comment="JSON格式人脸特征向量")
+    face_encoding: Mapped[List[float]] = mapped_column(JSON, nullable=False, comment="JSON格式人脸特征向量")
     face_image_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="人脸照片存储路径")
 
     # 时间戳
