@@ -153,6 +153,19 @@ export const faceApi = {
   deleteFaceData: async () => {
     const response = await api.delete('/api/face/data')
     return response.data
+  },
+
+  // 人脸登录
+  login: async (email, file) => {
+    const formData = new FormData()
+    formData.append('email', email)
+    formData.append('file', file)
+    const response = await api.post('/api/face/login', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
   }
 }
 

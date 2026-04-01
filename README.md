@@ -79,6 +79,7 @@ npm run build
 - **数据库迁移**: Alembic
 - **密码加密**: bcrypt
 - **邮箱验证**: email-validator
+- **人脸识别**: InsightFace 0.7.3 + OpenCV
 
 ## 项目结构
 
@@ -92,12 +93,16 @@ npm run build
 │   │   ├── api/                   # API 接口模块
 │   │   │   ├── __init__.py
 │   │   │   ├── router.py          # API 路由管理
-│   │   │   └── auth/              # 认证模块
+│   │   │   ├── auth/              # 认证模块
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── router.py      # 认证路由
+│   │   │   │   ├── service.py     # 业务逻辑
+│   │   │   │   ├── jwt.py         # JWT 处理
+│   │   │   │   └── dependencies.py # 依赖函数
+│   │   │   └── face_recognition/  # 人脸识别模块
 │   │   │       ├── __init__.py
-│   │   │       ├── router.py      # 认证路由
-│   │   │       ├── service.py     # 业务逻辑
-│   │   │       ├── jwt.py         # JWT 处理
-│   │   │       └── dependencies.py # 依赖函数
+│   │   │       ├── router.py      # 人脸识别路由
+│   │   │       └── service.py     # 人脸识别服务
 │   │   ├── cache/                 # 缓存模块
 │   │   │   ├── __init__.py
 │   │   │   └── redis.py           # Redis 连接管理
@@ -111,6 +116,10 @@ npm run build
 │   │   │   ├── face_data.py       # 人脸特征模型
 │   │   │   ├── books.py           # 图书模型
 │   │   │   └── borrow_records.py  # 借阅记录模型
+│   │   ├── static/                # 静态文件
+│   │   │   ├── faces/             # 人脸图片存储目录
+│   │   │   ├── avatars/           # 用户头像
+│   │   │   └── covers/            # 图书封面
 │   │   ├── __init__.py
 │   │   └── main.py                # 应用入口
 │   ├── alembic.ini                # Alembic 配置文件
@@ -610,6 +619,106 @@ npm run build
   ]
   ```
 
+### 人脸识别接口
+
+#### 1. 人脸注册
+- **接口**: `POST /api/face/register`
+- **描述**: 用户上传人脸图片，系统提取人脸特征并保存到数据库
+- **认证**: 需要 JWT 认证（HttpOnly Cookie）
+- **请求参数**: 表单数据，字段名为 `file`，类型为图片文件（支持 JPG、PNG 格式，最大 5MB）
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "user_id": 1,
+    "message": "人脸注册成功",
+    "face_image_path": "/static/faces/face_1_1711800000.jpg",
+    "face_encoding_length": 512
+  }
+  ```
+
+**使用流程**:
+1. 用户登录获取 JWT token
+2. 上传人脸图片
+3. 系统自动检测人脸、提取 512 维特征向量
+4. 保存人脸图片和特征向量到数据库
+
+#### 2. 获取人脸数据
+- **接口**: `GET /api/face/data`
+- **描述**: 获取当前用户的人脸数据
+- **认证**: 需要 JWT 认证
+- **响应**:
+  ```json
+  {
+    "id": 1,
+    "user_id": 1,
+    "face_encoding": [0.123, -0.456, 0.789, ...],
+    "face_image_path": "/static/faces/face_1_1711800000.jpg",
+    "created_at": "2026-03-30T10:00:00",
+    "updated_at": "2026-03-30T10:00:00"
+  }
+  ```
+
+#### 3. 删除人脸数据
+- **接口**: `DELETE /api/face/data`
+- **描述**: 删除当前用户的人脸数据（包括图片文件）
+- **认证**: 需要 JWT 认证
+- **响应**:
+  ```json
+  {
+    "message": "人脸数据删除成功"
+  }
+  ```
+
+#### 4. 验证服务可用性
+- **接口**: `GET /api/face/verify`
+- **描述**: 验证人脸识别服务是否可用
+- **响应**:
+  ```json
+  {
+    "status": "available",
+    "message": "人脸识别服务正常运行"
+  }
+  ```
+
+#### 5. 人脸登录
+- **接口**: `POST /api/face/login`
+- **描述**: 用户通过人脸识别登录系统（无需认证）
+- **请求参数**: 表单数据
+  - `email`: 用户邮箱（字符串）
+  - `file`: 人脸图片文件（支持 JPG、PNG 格式，最大 5MB）
+- **响应**:
+  ```json
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer",
+    "user": {
+      "id": 1,
+      "username": "张三",
+      "email": "zhangsan@example.com",
+      "avatar": "/static/avatars/default.jpg",
+      "role": "user",
+      "is_active": true
+    }
+  }
+  ```
+
+**工作流程**:
+1. 前端传递用户邮箱和人脸图片
+2. 后端根据邮箱查询用户
+3. 从数据库获取该用户已注册的人脸特征向量（512维）
+4. 提取上传图片的人脸特征向量
+5. 计算两个人脸特征向量的余弦相似度
+6. 如果相似度 > 0.5，登录成功，创建 JWT token 并设置 HttpOnly Cookie
+7. 如果相似度 ≤ 0.5，登录失败
+
+**错误情况**:
+- 用户不存在: `401 Unauthorized` - "用户不存在"
+- 账号被禁用: `403 Forbidden` - "账号已被禁用"
+- 未注册人脸: `404 Not Found` - "该用户未注册人脸，请先录入人脸或使用密码登录"
+- 相似度不足: `401 Unauthorized` - "人脸识别失败，相似度过低（0.42），请确保正对摄像头或使用密码登录"
+- 文件无效: `400 Bad Request` - "请上传图片文件（支持 JPG、PNG 格式）"
+
 ## 数据模型
 
 ### 1. 用户模型 (users.py)
@@ -619,8 +728,13 @@ npm run build
 
 ### 2. 人脸特征模型 (face_data.py)
 - **用途**: 存储用户的人脸识别数据
-- **字段**: 用户ID（外键）、人脸特征向量、人脸照片路径、创建/更新时间
+- **字段**:
+  - `user_id`: 用户ID（外键，一对一）
+  - `face_encoding`: 人脸特征向量（JSON 格式，512维浮点数数组）
+  - `face_image_path`: 人脸照片路径
+  - `created_at`, `updated_at`: 时间戳
 - **关系**: 一对一关联用户表，级联删除
+- **技术**: 使用 InsightFace 提取 512 维人脸特征向量，采用余弦相似度计算人脸匹配度
 
 ### 3. 图书模型 (books.py)
 - **状态**: 可借阅(available)、已借出(borrowed)、已预约(reserved)、损坏(damaged)、丢失(lost)
@@ -706,9 +820,15 @@ uvicorn app.main:app --reload
 
 - **双角色设计**：管理员与读者分离，权限明确
 - **邮箱验证**：注册时验证码验证，5分钟有效期
-- **人脸识别**：集成人脸识别 SDK 实现身份核验
+- **人脸识别**：
+  - 基于 InsightFace 实现高精度人脸识别（512维特征向量）
+  - 支持人脸注册、人脸登录、快速登录
+  - 余弦相似度算法，阈值 0.5 判断身份
+  - 自动人脸检测、特征提取、人脸裁剪
+  - 前端摄像头集成，一键拍照登录
+  - LocalStorage 存储用户信息，快速登录提示
 - **高效流程**：借阅登记、归还核验、逾期提醒全流程自动化
-- **数据安全**：密码加密存储，敏感数据保护
+- **数据安全**：密码加密存储，人脸特征向量安全存储
 - **系统稳定**：支持并发，响应延迟低
 - **可扩展性**：模块化设计，易于功能扩展
 - **缓存机制**：使用 Redis 缓存提升性能
@@ -801,4 +921,160 @@ await redis_client.set("token:123", "abc123", expire=3600)
 - ✅ 最近借阅图书列表功能完成
 - ✅ 图书搜索功能完成
 - ✅ 前端API接口封装完成
-- 🔄 人脸识别集成中
+- ✅ 人脸识别功能完成
+  - 人脸注册接口
+  - 人脸登录接口
+  - 快速登录提示
+  - 前端摄像头集成
+
+## 人脸识别技术实现
+
+### 核心算法
+
+#### 1. 人脸特征提取
+- **技术**: InsightFace (buffalo_l 模型)
+- **特征向量**: 512 维浮点数数组
+- **流程**: 图片输入 → 人脸检测 → 关键点定位 → 特征提取 → 归一化存储
+
+#### 2. 人脸相似度计算
+- **算法**: 余弦相似度 (Cosine Similarity)
+- **公式**: `similarity = dot(A, B) / (||A|| * ||B||)`
+- **范围**: [-1, 1]，值越大越相似
+- **阈值**: 0.5（相似度 > 0.5 视为同一人）
+
+#### 3. 关键算法优化
+
+**人脸边界框面积计算**:
+```python
+# 正确计算面积: (x2 - x1) * (y2 - y1)
+faces.sort(
+    key=lambda x: (x.bbox[2] - x.bbox[0]) * (x.bbox[3] - x.bbox[1]),
+    reverse=True
+)
+```
+
+**特征向量归一化存储**:
+```python
+embedding = main_face.embedding
+embedding_norm = np.linalg.norm(embedding)
+if embedding_norm > 0:
+    embedding = embedding / embedding_norm  # 单位化
+```
+
+**余弦相似度计算**:
+```python
+def compute_face_similarity(self, encoding1, encoding2):
+    vec1 = np.array(encoding1)
+    vec2 = np.array(encoding2)
+    
+    # 归一化
+    vec1_norm = vec1 / np.linalg.norm(vec1)
+    vec2_norm = vec2 / np.linalg.norm(vec2)
+    
+    # 余弦相似度 (范围 [-1, 1])
+    similarity = np.dot(vec1_norm, vec2_norm)
+    return float(similarity)
+```
+
+### 性能优化
+
+1. **模型单例**: InsightFace 模型全局单例，避免重复加载
+2. **异步处理**: 使用 async/await 处理 I/O 操作
+3. **文件限制**: 限制上传文件大小（5MB）和类型（JPG/PNG）
+4. **缓存优化**: Redis 缓存用户信息，减少数据库查询
+
+### 安全性考虑
+
+1. **认证机制**:
+   - 人脸注册需要 JWT 认证
+   - 人脸登录无需认证，但需提供邮箱
+   - HttpOnly Cookie 存储 token，防止 XSS 攻击
+
+2. **数据安全**:
+   - 人脸特征向量以 JSON 格式存储在数据库
+   - 用户只能访问自己的人脸数据
+   - 人脸图片存储在服务器，路径存数据库
+
+3. **防误识别**:
+   - 相似度阈值 0.5，降低误识别率
+   - 检测人脸质量，确保清晰度
+   - 自动选择最大人脸进行识别
+
+### 依赖库版本
+
+```
+insightface==0.7.3      # 人脸识别核心库
+opencv-python==4.13.0.92  # 图片处理
+numpy==2.4.3            # 数值计算
+```
+
+### 时区处理
+
+**问题**: PostgreSQL 时区兼容性问题
+- PostgreSQL 使用无时区时间戳 (`TIMESTAMP WITHOUT TIME ZONE`)
+- `datetime.now(timezone.utc)` 产生有时区时间，导致错误
+
+**解决方案**: 统一使用 `datetime.utcnow()` 无时区时间
+- 与项目原有代码保持一致
+- 避免 PostgreSQL 时区兼容问题
+- 简化开发逻辑
+
+### 使用示例
+
+#### cURL 示例
+```bash
+# 人脸注册
+curl -X POST "http://localhost:8000/api/face/register" \
+  -H "Cookie: access_token=<your_jwt_token>" \
+  -F "file=@face.jpg"
+
+# 人脸登录
+curl -X POST "http://localhost:8000/api/face/login" \
+  -F "email=user@example.com" \
+  -F "file=@face.jpg"
+
+# 验证服务
+curl "http://localhost:8000/api/face/verify"
+```
+
+#### Python 示例
+```python
+import requests
+
+# 人脸注册
+with open("face.jpg", "rb") as f:
+    files = {"file": ("face.jpg", f, "image/jpeg")}
+    response = requests.post(
+        "http://localhost:8000/api/face/register",
+        files=files,
+        cookies={"access_token": "your_jwt_token"}
+    )
+    print(response.json())
+
+# 人脸登录
+with open("face.jpg", "rb") as f:
+    files = {"file": ("face.jpg", f, "image/jpeg")}
+    data = {"email": "user@example.com"}
+    response = requests.post(
+        "http://localhost:8000/api/face/login",
+        files=files,
+        data=data
+    )
+    print(response.json())
+```
+
+### 错误处理
+
+#### HTTP 状态码
+- `400 Bad Request`: 文件无效、未检测到人脸、文件过大
+- `401 Unauthorized`: 用户不存在、相似度不足
+- `403 Forbidden`: 账号被禁用
+- `404 Not Found`: 未注册人脸
+- `503 Service Unavailable`: InsightFace 服务不可用
+
+#### 常见错误信息
+- "请上传图片文件（支持 JPG、PNG 格式）"
+- "图片文件大小不能超过 5MB"
+- "未检测到人脸，请确保图片中包含清晰的人脸"
+- "人脸识别失败，相似度过低（0.42），请确保正对摄像头或使用密码登录"
+- "该用户未注册人脸，请先录入人脸或使用密码登录"
